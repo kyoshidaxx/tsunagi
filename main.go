@@ -21,8 +21,12 @@ THE SOFTWARE.
 */
 package main
 
-import "github.com/kyoshidaxx/tsunagi/cmd"
+import (
+	"github.com/joho/godotenv"
+	"github.com/kyoshidaxx/tsunagi/cmd"
+)
 
 func main() {
+	godotenv.Load()
 	cmd.Execute()
 }

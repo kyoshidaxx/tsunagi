@@ -1,6 +1,11 @@
 package config
 
-import "errors"
+import (
+	"errors"
+	"slices"
+
+	"github.com/kyoshidaxx/tsunagi/internal/utils"
+)
 
 type ConfigParam struct {
 	Name         string
@@ -36,9 +41,14 @@ func (c *Config) Add(param ConfigParam) error {
 	if len(param.Region) == 0 {
 		return errors.New("region is required")
 	}
+	regionList := utils.GetRegionList()
+	if !slices.Contains(regionList, param.Region) {
+		return errors.New("region is not valid")
+	}
 	if len(param.InstanceName) == 0 {
 		return errors.New("instance name is required")
 	}
+	// todo Nameの重複チェック
 
 	return c.r.Save(param)
 }

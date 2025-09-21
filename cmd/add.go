@@ -4,14 +4,21 @@ Copyright © 2025 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"context"
-	"fmt"
+	"log"
+	"os"
 
-	"github.com/kyoshidaxx/tsunagi/internal/domain/cloud"
+	"github.com/AlecAivazis/survey/v2"
+	f "github.com/kyoshidaxx/tsunagi/internal/datastore/file"
+	"github.com/kyoshidaxx/tsunagi/internal/domain/config"
 	"github.com/kyoshidaxx/tsunagi/internal/utils"
-	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 )
+
+var projectID string
+var region string
+var instanceName string
+var port int
+var name string
 
 // addCmd represents the add command
 var addCmd = &cobra.Command{
@@ -25,62 +32,87 @@ Use Cloud SQL Auth Proxy based on the saved connection information`,
 		if err != nil {
 			return
 		}
-		// gcloud auth check
-		err = utils.CheckGcloudAuth()
+
+		if projectID == "" {
+			prompt := &survey.Input{
+				Message: "Enter Project ID",
+			}
+			err := survey.AskOne(prompt, &projectID)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+		}
+
+		if region == "" {
+			prompt := &survey.Select{
+				Message: "Select Region",
+				Options: utils.GetRegionList(),
+			}
+			err := survey.AskOne(prompt, &region)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+		}
+
+		if instanceName == "" {
+			prompt := &survey.Input{
+				Message: "Enter Instance Name",
+			}
+			err := survey.AskOne(prompt, &instanceName)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+		}
+
+		if port == 0 {
+			prompt := &survey.Input{
+				Message: "Enter Bind Port",
+			}
+			err := survey.AskOne(prompt, &port)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+		}
+
+		if name == "" {
+			prompt := &survey.Input{
+				Message: "Enter Config Name",
+			}
+			err := survey.AskOne(prompt, &name)
+			if err != nil {
+				log.Fatal(err)
+				return
+			}
+		}
+
+		r := f.NewConfigFileRepository(os.Getenv("CONFIG_FILE_PATH"))
+		c := config.NewConfig(r)
+
+		err = c.Add(config.ConfigParam{
+			Name:         name,
+			Port:         port,
+			ProjectName:  projectID,
+			Region:       region,
+			InstanceName: instanceName,
+		})
+
 		if err != nil {
+			log.Fatal(err)
 			return
 		}
-
-		// get information
-		ctx := context.Background()
-		pc, err := cloud.NewProjectClient(ctx)
-		if err != nil {
-			return
-		}
-		defer pc.Close()
-		var projects []cloud.Project
-		projects, err = pc.GetProjectList(ctx)
-		if err != nil {
-			return
-		}
-
-		// select project
-		prompt := promptui.Select{
-			Label: "Select Project",
-			Items: projects,
-		}
-		index, _, err := prompt.Run()
-		if err != nil {
-			return
-		}
-		projectId := projects[index].ID
-
-		fmt.Println(projectId)
-		// todo db instance の選択
-
-		// r := datastore.NewConfigFileRepository()
-		// c := config.NewConfig(r)
-
-		// c.Add(config.ConfigParam{
-		// 	Name:         args[0],
-		// 	Port:         strconv.Atoi(args[1]),
-		// 	ProjectName:  args[2],
-		// 	Region:       args[3],
-		// 	InstanceName: args[4],
-		// })
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(addCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// addCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	addCmd.Flags().StringVarP(&projectID, "project", "p", "", "Project ID")
+	addCmd.Flags().StringVarP(&region, "region", "r", "", "Region")
+	addCmd.Flags().StringVarP(&instanceName, "instance", "i", "", "Instance name")
+	addCmd.Flags().IntVarP(&port, "port", "o", 0, "Port")
+	addCmd.Flags().StringVarP(&name, "name", "n", "", "Name")
 }
