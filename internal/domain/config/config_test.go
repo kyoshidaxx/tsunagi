@@ -184,7 +184,7 @@ func TestConfig_Add_ValidBoundaryValues(t *testing.T) {
 			name: "minimum valid port",
 			param: ConfigParam{
 				Name:         "test-config",
-				Port:         49152, // 最小値
+				Port:         49152, // min
 				ProjectName:  "test-project",
 				Region:       "asia-northeast1",
 				InstanceName: "test-instance",
@@ -194,7 +194,7 @@ func TestConfig_Add_ValidBoundaryValues(t *testing.T) {
 			name: "maximum valid port",
 			param: ConfigParam{
 				Name:         "test-config",
-				Port:         65535, // 最大値
+				Port:         65535, // max
 				ProjectName:  "test-project",
 				Region:       "asia-northeast1",
 				InstanceName: "test-instance",
@@ -240,7 +240,7 @@ func TestConfig_Add_RepositoryError(t *testing.T) {
 	mockRepo := &mockRepository{}
 	config := NewConfig(mockRepo)
 
-	// リポジトリでエラーが発生する場合をシミュレート
+	// simulate repository save failed
 	expectedError := errors.New("repository save failed")
 	mockRepo.saveError = expectedError
 
@@ -261,16 +261,16 @@ func TestConfig_Add_RepositoryError(t *testing.T) {
 }
 
 func TestConfig_Add_MultipleValidationErrors(t *testing.T) {
-	// 複数のバリデーションエラーがある場合、最初のエラーが返されることを確認
+	// multiple validation errors, first error is returned
 	mockRepo := &mockRepository{}
 	config := NewConfig(mockRepo)
 
 	param := ConfigParam{
-		Name:         "",   // 空の名前
-		Port:         1000, // 範囲外のポート
-		ProjectName:  "",   // 空のプロジェクト名
-		Region:       "",   // 空のリージョン
-		InstanceName: "",   // 空のインスタンス名
+		Name:         "",   // empty name
+		Port:         1000, // out of range port
+		ProjectName:  "",   // empty project name
+		Region:       "",   // empty region
+		InstanceName: "",   // empty instance name
 	}
 
 	err := config.Add(param)
@@ -280,7 +280,7 @@ func TestConfig_Add_MultipleValidationErrors(t *testing.T) {
 	assert.False(t, mockRepo.saveCalled)
 }
 
-// ベンチマークテスト
+// benchmark test
 func BenchmarkConfig_Add(b *testing.B) {
 	mockRepo := &mockRepository{}
 	config := NewConfig(mockRepo)
